@@ -1,7 +1,10 @@
 # config.py
-# Configuration for Nani OI — Auto Signal Engine
+# Configuration file for Nani OI — Auto Signal Engine
 
-NANI_OI_API_URL = "https://nani-oi-service.streamlit.app/api/live_data"
+# 🌐 Live API Endpoint hosted on Render
+NANI_OI_API_URL = "https://nani-oi-api.onrender.com/api/live_data"
 
-# No authorization header required for now
-API_HEADERS = {}
+# 🔑 API Headers (if you ever add authentication later)
+API_HEADERS = {
+    # Example: "Authorization": "Bearer your_token_here"
+}
