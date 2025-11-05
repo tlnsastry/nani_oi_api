@@ -3,7 +3,6 @@ import requests
 
 app = FastAPI(title="Nani OI API – Live Multi-Index Feed")
 
-# common NSE headers (important – NSE blocks bots without them)
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
@@ -11,18 +10,13 @@ HEADERS = {
     "Connection": "keep-alive",
 }
 
-
 def fetch_nse_option_chain(symbol: str):
-    """
-    Pulls option-chain data from NSE and summarizes OI change + signal.
-    """
     url = f"https://www.nseindia.com/api/option-chain-indices?symbol={symbol}"
     session = requests.Session()
     try:
         data = session.get(url, headers=HEADERS, timeout=10).json()
         records = data.get("records", {}).get("data", [])
         items = []
-
         for record in records:
             if "CE" in record and "PE" in record:
                 ce = record["CE"]
@@ -36,25 +30,16 @@ def fetch_nse_option_chain(symbol: str):
                     "price": ce.get("underlyingValue"),
                     "signal": signal
                 })
-
-        # keep top 3 movers by absolute OI change
         items = sorted(items, key=lambda x: abs(x["oi_change"]), reverse=True)[:3]
         return items
-
     except Exception as e:
         return [{"symbol": symbol, "error": str(e)}]
 
-
 @app.get("/api/live_data")
 def get_live_data():
-    """
-    Combines NIFTY, BANKNIFTY and SENSEX data into one feed.
-    """
     data = []
     for sym in ["NIFTY", "BANKNIFTY"]:
         data.extend(fetch_nse_option_chain(sym))
-
-    # SENSEX is not available via NSE, so use BSE endpoint (simpler data)
     try:
         sensex_resp = requests.get(
             "https://api.bseindia.com/BseIndiaAPI/api/StockReachGraph/w?scripcode=1&flag=0",
@@ -66,5 +51,4 @@ def get_live_data():
             data.append({"symbol": "SENSEX", "oi_change": 0, "price": price, "signal": "NEUTRAL"})
     except Exception:
         data.append({"symbol": "SENSEX", "oi_change": 0, "price": None, "signal": "NEUTRAL"})
-
     return data
